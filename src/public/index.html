@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Demo Store</title>
+    <style>
+      :root {
+        font-family: system-ui, sans-serif;
+        color: #1f2328;
+        background: #f6f8fa;
+      }
+      main {
+        max-width: 720px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: #fff;
+      }
+      th,
+      td {
+        padding: 0.5rem;
+        border-bottom: 1px solid #d0d7de;
+        text-align: left;
+      }
+      input[type='number'] {
+        width: 4rem;
+      }
+      .row {
+        display: flex;
+        gap: 1rem;
+        margin: 1rem 0;
+        flex-wrap: wrap;
+      }
+      button {
+        padding: 0.6rem 1.2rem;
+        font-size: 1rem;
+      }
+      #result {
+        margin-top: 1rem;
+        padding: 1rem;
+        background: #fff;
+        border-left: 4px solid #0969da;
+      }
+      #result:empty {
+        display: none;
+      }
+      #result.error {
+        border-color: #cf222e;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Demo Store</h1>
+      <form id="checkout">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Product</th>
+              <th scope="col">Price</th>
+              <th scope="col">In stock</th>
+              <th scope="col">Quantity</th>
+            </tr>
+          </thead>
+          <tbody id="products"></tbody>
+        </table>
+        <div class="row">
+          <label>Coupon code <input name="coupon" autocomplete="off" /></label>
+          <label>
+            Payment method
+            <select name="paymentToken">
+              <option value="tok_visa">Visa ending 4242</option>
+              <option value="tok_declined">Visa ending 0002 (always declined)</option>
+            </select>
+          </label>
+        </div>
+        <button type="submit">Place order</button>
+      </form>
+      <section id="result" aria-live="polite"></section>
+    </main>
+    <script type="module">
+      const euro = (cents) =>
+        new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR' }).format(cents / 100);
+      const form = document.querySelector('#checkout');
+      const result = document.querySelector('#result');
+      const button = form.querySelector('button');
+
+      async function loadProducts() {
+        const { products } = await (await fetch('/products')).json();
+        document.querySelector('#products').innerHTML = products
+          .map(
+            (p) => `<tr>
+              <td>${p.name}</td>
+              <td>${euro(p.priceCents)}</td>
+              <td data-stock-for="${p.sku}">${p.stock}</td>
+              <td><input type="number" min="0" max="10" value="0" name="qty" data-sku="${p.sku}"
+                   aria-label="Quantity of ${p.name}" /></td>
+            </tr>`,
+          )
+          .join('');
+      }
+
+      function show(html, isError) {
+        result.className = isError ? 'error' : '';
+        result.innerHTML = html;
+      }
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const items = [...form.querySelectorAll('input[name=qty]')]
+          .map((input) => ({ sku: input.dataset.sku, quantity: Number(input.value) }))
+          .filter((item) => item.quantity > 0);
+        if (items.length === 0) return show('<p role="alert">Add at least one product.</p>', true);
+
+        const coupon = form.coupon.value.trim();
+        button.disabled = true;
+        try {
+          const response = await fetch('/orders', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
+            body: JSON.stringify({
+              customerId: 'cus_demo',
+              items,
+              paymentToken: form.paymentToken.value,
+              ...(coupon ? { couponCode: coupon } : {}),
+            }),
+          });
+          const body = await response.json();
+          if (response.status === 201) {
+            show(
+              `<h2>Order confirmed</h2>
+               <p>Order <code data-testid="order-id">${body.id}</code> is ${body.status}.</p>
+               <p>Total charged: <strong data-testid="order-total">${euro(body.totalCents)}</strong></p>`,
+              false,
+            );
+          } else {
+            show(`<p role="alert">${body.message}</p>`, true);
+          }
+          await loadProducts();
+        } finally {
+          button.disabled = false;
+        }
+      });
+
+      loadProducts();
+    </script>
+  </body>
+</html>

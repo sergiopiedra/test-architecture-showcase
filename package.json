@@ -1,0 +1,66 @@
+{
+  "name": "test-architecture-showcase",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A reference test architecture for a small order service: unit, property-based, mutation, integration (Testcontainers), contract (Pact) and E2E (Playwright) tests with CI quality gates.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "start": "tsx scripts/start-stack.ts",
+    "test": "npm run test:unit && npm run test:integration && npm run test:contract && npm run test:e2e",
+    "test:unit": "vitest run --project unit",
+    "test:integration": "vitest run --project integration",
+    "test:contract": "npm run test:contract:consumer && npm run test:contract:provider",
+    "test:contract:consumer": "vitest run --project contract-consumer",
+    "test:contract:provider": "vitest run --project contract-provider",
+    "test:e2e": "playwright test",
+    "test:coverage": "vitest run --project unit --project integration --coverage",
+    "test:mutation": "stryker run",
+    "test:burn-in": "playwright test --repeat-each=5 --retries=0 --workers=4",
+    "report:e2e": "playwright show-report",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "npm run typecheck && npm run lint && npm run format:check"
+  },
+  "dependencies": {
+    "fastify": "5.12.7",
+    "pg": "8.23.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@pact-foundation/pact": "17.1.4",
+    "@playwright/test": "1.64.1",
+    "@stryker-mutator/core": "10.1.1",
+    "@stryker-mutator/vitest-runner": "10.1.1",
+    "@testcontainers/postgresql": "12.2.1",
+    "@types/node": "24.19.2",
+    "@types/pg": "8.23.1",
+    "@vitest/coverage-v8": "5.0.5",
+    "eslint": "10.13.0",
+    "eslint-config-prettier": "10.1.8",
+    "eslint-plugin-playwright": "2.12.1",
+    "fast-check": "4.10.2",
+    "msw": "3.0.3",
+    "prettier": "3.9.10",
+    "testcontainers": "12.2.1",
+    "tsx": "4.23.15",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.1",
+    "vitest": "5.0.5"
+  },
+  "allowScripts": {
+    "esbuild": true,
+    "@scarf/scarf": false,
+    "cpu-features": false,
+    "fsevents": false,
+    "protobufjs": false,
+    "ssh2": false
+  }
+}

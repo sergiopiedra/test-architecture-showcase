@@ -1,0 +1,9 @@
+node_modules/
+coverage/
+reports/
+test-results/
+playwright-report/
+blob-report/
+pacts/
+.stryker-tmp/
+package-lock.json

@@ -1,0 +1,59 @@
+name: Nightly burn-in
+
+# Flaky tests are found by repetition, not by luck. Every night the suites that touch
+# I/O run several times with no retries and in shuffled order. A test that fails here
+# but passed in CI is flaky: quarantine it, fix it, and add the root cause to the
+# flaky-test log (see docs/test-strategy.md).
+
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+    inputs:
+      repeats:
+        description: 'How many times to run each suite'
+        required: false
+        default: '5'
+
+permissions:
+  contents: read
+
+jobs:
+  integration:
+    name: Integration x${{ inputs.repeats || 5 }} (shuffled)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Repeat with a new shuffle seed each run
+        run: |
+          for run in $(seq 1 "${{ inputs.repeats || 5 }}"); do
+            echo "::group::Run $run"
+            npx vitest run --project integration --sequence.shuffle --sequence.seed="$RANDOM"
+            echo "::endgroup::"
+          done
+
+  e2e:
+    name: E2E x${{ inputs.repeats || 5 }} (no retries)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test --repeat-each=${{ inputs.repeats || 5 }} --retries=0
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: burn-in-report
+          path: playwright-report/
+          retention-days: 14
