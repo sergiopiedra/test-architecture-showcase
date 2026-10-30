@@ -72,7 +72,7 @@ The rules are small but have the properties that make real systems hard to test:
 | ------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------- | ----------------------- | ---------------- |
 | **Unit**            | Vitest                  | Pricing, money and lifecycle rules, with worked examples and an exhaustive 5 × 4 transition table                 | 75                      | < 1 s            |
 | **Property-based**  | fast-check              | Invariants hold for _any_ cart: total adds up, never negative, tax within half a cent, order of lines irrelevant… | 7 properties × 100 runs | < 1 s            |
-| **Mutation**        | Stryker                 | The unit tests actually _detect_ broken domain code, not just execute it                                          | 148 mutants             | ~20 s            |
+| **Mutation**        | Stryker                 | The unit tests actually _detect_ broken domain code, not just execute it                                          | 148 mutants             | ~10 s            |
 | **Integration**     | Vitest + Testcontainers | API + SQL + transactions on real Postgres 17: validation, error mapping, idempotency, stock, **race conditions**  | 24                      | ~3 s + container |
 | **Fault injection** | Vitest + MSW            | The payments client under 5xx, 429, hangs, dropped connections, malformed bodies; backoff timing                  | 14                      | < 1 s            |
 | **Contract**        | Pact                    | orders-service and payments-service agree on the API. The consumer writes the pact; the provider replays it       | 3 interactions          | ~2 s             |
