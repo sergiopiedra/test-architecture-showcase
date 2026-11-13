@@ -47,7 +47,7 @@
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-playwright": "2.12.1",
     "fast-check": "4.10.2",
-    "msw": "3.0.3",
+    "msw": "3.0.4",
     "prettier": "3.9.10",
     "testcontainers": "12.2.1",
     "tsx": "4.23.15",
